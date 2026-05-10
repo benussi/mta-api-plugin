@@ -1,0 +1,10 @@
+{
+  "name": "mta-docs-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server that live-fetches MTA GTFS documentation",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=18"
+  }
+}

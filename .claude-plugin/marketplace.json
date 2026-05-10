@@ -1,0 +1,13 @@
+{
+  "name": "mta-marketplace",
+  "owner": {
+    "name": "MTA Platform Engineering"
+  },
+  "plugins": [
+    {
+      "name": "mta-api",
+      "source": "./",
+      "description": "Guides developers through MTA API integration with a live-docs MCP server, a validation skill, slash commands, and a structured-feedback skeleton."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "mta-api",
+  "version": "0.1.0",
+  "description": "Helps developers integrate MTA APIs. Live-fetches official MTA GTFS documentation, generates working integration examples, validates code against best practices, and captures structured feedback on what was hard.",
+  "author": {
+    "name": "MTA Platform Engineering"
+  },
+  "mcpServers": {
+    "mta-docs": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/src/index.js"]
+    }
+  }
+}
