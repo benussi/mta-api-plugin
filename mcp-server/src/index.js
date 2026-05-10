@@ -16,7 +16,8 @@ const cache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 async function fetchWithCache(url, options = {}) {
-  const cached = cache.get(url);
+  const key = `${url}|${options.json ? "json" : "text"}`;
+  const cached = cache.get(key);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.body;
   const res = await fetch(url, {
     headers: { "User-Agent": "mta-api-plugin/0.1.0", ...(options.headers || {}) },
@@ -24,7 +25,7 @@ async function fetchWithCache(url, options = {}) {
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
   const body = options.json ? await res.json() : await res.text();
-  cache.set(url, { at: Date.now(), body });
+  cache.set(key, { at: Date.now(), body });
   return body;
 }
 
@@ -187,17 +188,25 @@ let buf = "";
 const inflight = new Set();
 let stdinClosed = false;
 
-function track(promise) {
-  inflight.add(promise);
-  promise.finally(() => {
-    inflight.delete(promise);
+function track(value) {
+  if (!value || typeof value.finally !== "function") return;
+  inflight.add(value);
+  value.finally(() => {
+    inflight.delete(value);
     if (stdinClosed && inflight.size === 0) process.exit(0);
   });
 }
 
+const MAX_BUF_BYTES = 10 * 1024 * 1024;
+
 process.stdin.setEncoding("utf8");
 process.stdin.on("data", (chunk) => {
   buf += chunk;
+  if (buf.length > MAX_BUF_BYTES) {
+    process.stderr.write(`dropping oversized input (>${MAX_BUF_BYTES}B)\n`);
+    buf = "";
+    return;
+  }
   let nl;
   while ((nl = buf.indexOf("\n")) !== -1) {
     const line = buf.slice(0, nl).trim();

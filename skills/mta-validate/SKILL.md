@@ -69,38 +69,42 @@ After delivering the report, prompt the developer:
 > 2. Did anything in the API behave differently than the docs suggested?
 > 3. What took longer than it should have?
 
-When the developer responds, **structure the feedback as JSON** matching `feedback_schema.json` (see below) and write it to:
+Redact secrets from the developer's responses before writing — same rules as `/mta-feedback`:
+
+- Strip strings matching `x-api-key:\s*\S+`, `MTA_API_KEY=\S+`, or bare 32+ char hex/base64 tokens
+- Replace pasted code snippets with `[code redacted — full code reviewed inline]`
+- Strip email addresses and `Authorization:` header values
+
+Then structure as JSON matching the shape below and write to:
 
 ```
 ${CLAUDE_PLUGIN_ROOT}/feedback/<timestamp>-<short-id>.json
 ```
 
-> **Skeleton note for the MTA platform engineer:** This local-file write is a
-> placeholder. In production, replace the file write with a POST to your
-> internal feedback endpoint (Linear / Sentry / internal API / Claude Managed
-> Agents queue). The structured-JSON shape stays the same so downstream
-> tooling — including a future Claude Managed Agent with dreaming enabled —
-> can extract patterns across submissions and propose new validation rules
-> automatically.
-
-### feedback_schema.json (illustrative)
-
 ```json
 {
   "submitted_at": "ISO-8601 timestamp",
-  "developer_team": "internal | external",
-  "feed_group_used": "subway-ace | lirr | ...",
+  "developer_team": "internal | external | unknown",
+  "feed_group_used": "subway-ace | lirr | ... | unknown",
   "validation_findings": [
-    { "rule_id": "auth-header", "status": "fail", "user_acknowledged": true }
+    { "rule_id": "auth-header", "status": "fail | warn | pass", "user_acknowledged": true }
   ],
   "open_text": {
-    "missing_docs": "...",
-    "behavior_mismatch": "...",
-    "time_sink": "..."
+    "missing_docs": "user's words, secrets/code redacted",
+    "behavior_mismatch": "user's words, secrets/code redacted",
+    "time_sink": "user's words, secrets/code redacted"
   },
-  "code_excerpt_hash": "sha256 of validated code (privacy-preserving)"
+  "code_excerpt_hash": "sha256 of validated code (privacy-preserving)",
+  "source": "mta-validate-skill"
 }
 ```
+
+> **Skeleton note for the MTA platform engineer:** This local-file write is a
+> placeholder. In production, replace it with a POST to your internal feedback
+> endpoint (Linear / Sentry / internal API / Claude Managed Agents queue). The
+> JSON shape stays the same so downstream tooling — including a future Claude
+> Managed Agent with dreaming enabled — can extract patterns across
+> submissions and propose new validation rules automatically.
 
 ## What NOT to validate
 

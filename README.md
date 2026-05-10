@@ -24,7 +24,7 @@ Everything stays in sync with MTA: when a new doc lands in `nymta/gtfs-documenta
 In Claude Code, run:
 
 ```
-/plugin marketplace add <this-repo-url>
+/plugin marketplace add https://github.com/benussi/mta-api-plugin
 /plugin install mta-api@mta-marketplace
 /reload-plugins
 ```

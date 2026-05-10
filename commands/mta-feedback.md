@@ -15,7 +15,13 @@ Prompt them with the three structured questions:
 > Optionally:
 > 4. Which feed group(s) were you working with? (e.g. subway-ace, lirr, alerts)
 
-Once the user responds, write the feedback to:
+Before writing, redact secrets from the user's responses:
+
+- Strip any string that looks like an API key (e.g. matches `x-api-key:\s*\S+`, `MTA_API_KEY=\S+`, or a bare 32+ char hex/base64 token).
+- If the user pasted code snippets in their answers, replace them with `[code redacted — see /mta-validate for code review]`.
+- Strip email addresses and any `Authorization:` header values.
+
+Once the user responds, write the (redacted) feedback to:
 
 ```
 ${CLAUDE_PLUGIN_ROOT}/feedback/<YYYYMMDD-HHMMSS>-<6char-id>.json
@@ -30,9 +36,9 @@ Schema:
   "feed_group_used": "subway-ace | lirr | ... | unknown",
   "validation_findings": [],
   "open_text": {
-    "missing_docs": "verbatim from user",
-    "behavior_mismatch": "verbatim from user",
-    "time_sink": "verbatim from user"
+    "missing_docs": "user's words, with secrets/code redacted",
+    "behavior_mismatch": "user's words, with secrets/code redacted",
+    "time_sink": "user's words, with secrets/code redacted"
   },
   "source": "mta-feedback-slash-command"
 }

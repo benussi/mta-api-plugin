@@ -10,85 +10,73 @@
 
 const BASE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds";
 
-const FEED_GROUPS = {
+const DEFAULTS = {
+  format: "GTFS-RT (protobuf)",
+  auth: "API key required as `x-api-key` header. Register at api.mta.info.",
+};
+
+const RAW_FEED_GROUPS = {
   "subway-ace": {
     lines: ["A", "C", "E"],
     url: `${BASE_URL}/nyct%2Fgtfs-ace`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header. Register at api.mta.info.",
     description: "Real-time trip updates and vehicle positions for the A, C, and E subway lines.",
   },
   "subway-bdfm": {
     lines: ["B", "D", "F", "M"],
     url: `${BASE_URL}/nyct%2Fgtfs-bdfm`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Real-time data for B, D, F, M lines.",
   },
   "subway-g": {
     lines: ["G"],
     url: `${BASE_URL}/nyct%2Fgtfs-g`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Real-time data for the G line.",
   },
   "subway-jz": {
     lines: ["J", "Z"],
     url: `${BASE_URL}/nyct%2Fgtfs-jz`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Real-time data for J, Z lines.",
   },
   "subway-nqrw": {
     lines: ["N", "Q", "R", "W"],
     url: `${BASE_URL}/nyct%2Fgtfs-nqrw`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Real-time data for N, Q, R, W lines.",
   },
   "subway-l": {
     lines: ["L"],
     url: `${BASE_URL}/nyct%2Fgtfs-l`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Real-time data for the L line.",
   },
   "subway-numbered": {
     lines: ["1", "2", "3", "4", "5", "6", "7", "S"],
     url: `${BASE_URL}/nyct%2Fgtfs`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Real-time data for the numbered lines (1,2,3,4,5,6,7) and S shuttle.",
   },
   "subway-si": {
     lines: ["SIR"],
     url: `${BASE_URL}/nyct%2Fgtfs-si`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Staten Island Railway real-time data.",
   },
   "alerts": {
     lines: ["ALL"],
     url: `${BASE_URL}/camsys%2Fall-alerts`,
     format: "GTFS-RT Service Alerts (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Service alerts across subway, bus, LIRR, and Metro-North.",
   },
   "lirr": {
     lines: ["LIRR"],
     url: `${BASE_URL}/lirr%2Fgtfs-lirr`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Long Island Rail Road real-time trip data.",
   },
   "mnr": {
     lines: ["MNR"],
     url: `${BASE_URL}/mnr%2Fgtfs-mnr`,
-    format: "GTFS-RT (protobuf)",
-    auth: "API key required as `x-api-key` header.",
     description: "Metro-North Railroad real-time trip data.",
   },
 };
+
+const FEED_GROUPS = Object.fromEntries(
+  Object.entries(RAW_FEED_GROUPS).map(([k, v]) => [k, { ...DEFAULTS, ...v }]),
+);
 
 const AUTH_OVERVIEW = {
   registration_url: "https://api.mta.info/",
