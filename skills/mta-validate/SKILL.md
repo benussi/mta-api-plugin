@@ -19,7 +19,7 @@ Invoke this skill when:
 
 ### Step 1: Pull the current best-practices checklist
 
-Call the MCP tool `mcp__mta-docs__get_best_practices`. This returns the live checklist with `id`, `title`, and `detail` for each rule. Always re-pull this — it's the source of truth and may update.
+Call the MCP tool `mcp__plugin_mta-api_mta-docs__get_best_practices`. This returns the live checklist with `id`, `title`, and `detail` for each rule. Always re-pull this — it's the source of truth and may update.
 
 ### Step 2: For each rule, classify the code as pass / warn / fail
 
