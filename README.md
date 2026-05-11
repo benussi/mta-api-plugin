@@ -4,6 +4,8 @@ Built for the MTA platform engineer who is tired of answering the same API integ
 
 This plugin lets external and internal developers integrate the MTA real-time feeds inside Claude Code: ask a question in plain English, get correct working code grounded in MTA's live docs, validate it against MTA-specific best practices, and leave structured feedback that the platform team uses to prioritize docs and API improvements.
 
+> **Why MTA?** Most enterprise APIs already have official Claude Code plugins (Stripe, Twilio, Datadog, GitHub, Salesforce, Atlassian, …). MTA doesn't — the docs are Akamai bot-protected, the feeds 403 unauthenticated, and the canonical reference is a sparse GitHub repo. That's the hard case the framework needs to hold up under. If the pattern works here, it works for any enterprise API a customer brings you.
+
 ---
 
 ## What this plugin includes
