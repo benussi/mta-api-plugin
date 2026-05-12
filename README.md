@@ -1,33 +1,34 @@
-# mta-api — a Claude Code plugin for MTA API integration
+# mta-api Claude Code plugin
 
-Built for the MTA platform engineer who is tired of answering the same API integration questions.
+For the MTA platform engineer who keeps answering the same integration questions and has no structured sense of which bits developers are actually getting stuck on.
 
-This plugin lets external and internal developers integrate the MTA real-time feeds inside Claude Code: ask a question in plain English, get correct working code grounded in MTA's live docs, validate it against MTA-specific best practices, and leave structured feedback that the platform team uses to prioritize docs and API improvements.
+Three pieces. An integration agent that answers questions and generates working code. A validation skill that checks code against MTA-specific gotchas I found by probing the live endpoints. A feedback step that captures what the developer struggled with, so the platform team finally has data on what to fix.
 
-> **Why MTA?** Two reasons.
->
-> **One — MTA is the integration layer enterprise actually consumes.** The feeds are open, no API key, no partnership contract. Companies like United telling a landed passenger which train to catch from JFK, hotels surfacing arrival directions, ride-share platforms routing pickups near subway entrances, real-estate apps showing transit access — all real enterprise use cases that need an integration layer on top of MTA. This plugin is that layer.
->
-> **Two — it's the deliberately harder case to demo the framework on.** Most other enterprise APIs already have official Claude Code plugins (Stripe, Twilio, Datadog, GitHub, Salesforce, Atlassian, …). MTA doesn't. The human-readable docs page bot-fingerprints anything without browser-like headers (Claude WebFetch and vanilla scrapers get a 403), the feed-group catalog isn't published in any structured form, and the endpoints have probe-discovered gotchas (HEAD returns 403 even when GET works; the path needs `%2F` not `/`). If the pattern works here, it works for any enterprise API a customer brings you.
+## Why MTA?
 
----
+Two reasons.
 
-## What this plugin includes
+First, the integration layer is enterprise-relevant. The feeds are open. No API key, no partnership contract. Companies like United telling a landed passenger which train to catch from JFK, hotels surfacing arrival directions, ride-share platforms routing pickups near subway entrances, real-estate apps showing transit access. This isn't civic tech; it's the integration layer those enterprise teams actually need.
 
-- **Agent — `mta-integration-guide`** — answers integration questions ("how do I get real-time L train arrivals?"), maps lines to the correct feed group, generates working code, surfaces auth and rate-limit gotchas.
-- **Skill — `mta-validate`** — reviews integration code against an MTA best-practices checklist grounded in real endpoint probes (HEAD-vs-GET gotcha, URL-encoded feed path, polling cadence, backoff, timeouts, GTFS-RT parsing, caching, empty-feed handling). Returns pass/warn/fail per rule with suggested fixes.
-- **MCP server — `mta-docs`** — live-fetches MTA's own [official GTFS documentation repo](https://github.com/nymta/gtfs-documentation) and the [canonical NYCT GTFS-RT proto](https://api.mta.info/nyct-subway.proto.txt). Plus a curated registry of feed-group URLs and auth notes (the parts MTA doesn't publish in a structured form).
-- **Slash commands** — `/mta-validate` (validate code) and `/mta-feedback` (standalone feedback).
+Second, it's a deliberately harder case to demonstrate the pattern on. Most other enterprise APIs already have official Claude Code plugins (Stripe, Twilio, Datadog, GitHub, Salesforce, Atlassian). MTA doesn't. The documentation page checks request headers, so anything that doesn't look like a real browser gets a 403 back. The list of which subway lines map to which feed URL isn't published in any structured form. And the endpoints have probe-discovered gotchas: HEAD returns 403 even when GET works, the path needs `%2F` not `/`. If the pattern holds up here, it holds up anywhere a customer brings you.
 
-Everything stays in sync with MTA: when a new doc lands in `nymta/gtfs-documentation`, the plugin picks it up on the next call — no plugin update needed.
+## What's in it
 
----
+Four pieces do the actual work.
 
-## Install (under 5 minutes)
+`agents/mta-integration-guide.md`. Answers integration questions, maps subway lines to the right feed, generates working code, and surfaces auth and rate-limit considerations before the developer hits them.
 
-**Requirements:** Claude Code, Node.js ≥ 18.
+`skills/mta-validate/SKILL.md`. Reviews integration code against an eight-rule checklist grounded in real probes against the MTA endpoints. The rules cover the HEAD-vs-GET gotcha, the `%2F`-encoded path, polling cadence, backoff, timeouts, GTFS-realtime parsing, caching, and empty-feed handling. Returns pass/warn/fail per rule with suggested fixes.
 
-In Claude Code, run:
+`mcp-server/src/`. A zero-dependency Node MCP server. It fetches the official MTA GTFS documentation repository on GitHub and the canonical NYCT extensions specification from api.mta.info live, and serves a curated registry of feed-group URLs and the best-practices rules used by the validation skill.
+
+Two slash commands: `/mta-validate` and `/mta-feedback`. Both wired to the skill and to the structured-feedback writer.
+
+## Install
+
+Requirements: Claude Code, Node 18 or higher.
+
+In Claude Code:
 
 ```
 /plugin marketplace add https://github.com/benussi/mta-api-plugin
@@ -35,126 +36,57 @@ In Claude Code, run:
 /reload-plugins
 ```
 
-That's it. No `npm install`, no settings.json edits — the MCP server is vanilla Node (zero deps) and auto-starts when the plugin loads.
+No `npm install`, no settings.json edits. The MCP server is plain Node with zero dependencies and starts automatically when the plugin loads.
 
-### Verify it loaded
+Verify it loaded:
 
 ```
 /plugin
 ```
 
-You should see **mta-api** in the *Installed* tab with a green check and an empty *Errors* tab.
+`mta-api` should show in the Installed tab with a green tick, and the Errors tab should be empty. After that, `/mta-validate` should prompt for code, and `@mta-integration-guide how do I get real-time L train arrivals?` should start the integration agent.
 
-Then try:
+## A quick example
 
-```
-/mta-validate
-```
+Ask the agent something real:
 
-…which should prompt for code to validate.
+> How do I get real-time L train arrivals in Python?
 
-```
-@mta-integration-guide how do I get real-time L train arrivals?
-```
+It will call the MCP server to look up the L line's feed group, surface the relevant authentication notes (optional today, worth registering for at scale), and generate runnable Python using `gtfs-realtime-bindings`. The generated code includes a timeout, error handling, and TODO markers for the caching layer and an exponential-backoff retry.
 
-…should kick off the integration agent.
+Paste the generated code back and run `/mta-validate`. The skill walks all eight rules, flags whatever's missing (probably the caching layer and the retry), and asks for structured feedback on what was confusing.
 
----
+## The framework: build your own
 
-## Try it
+The MTA plugin is one instance of a pattern. The work of spotting the next one in your organisation comes down to three questions.
 
-Ask the agent a real question:
+The first question is about toil. What repetitive task is stealing time from higher-value work? For the MTA platform engineer, the toil was answering the same integration questions over and over.
 
-> "How do I get real-time L train arrivals in Python?"
+The second question is about signal. What are you missing because you're too busy answering questions to think about the pattern? For the MTA, there was no visibility into where the API was actually confusing developers.
 
-The agent will call `list_feed_groups` and `get_feed_group` to find the right feed (`subway-l`), `get_auth_overview` to surface the API-key requirement, and generate runnable Python using `gtfs-realtime-bindings` with proper timeout, error handling, and a `TODO: caching` marker.
+The third question is about outcome. What would change if developers could self-serve and you got structured feedback on what was hard? Faster adoption, API improvements informed by real usage, the platform engineer's time back.
 
-Paste that code back and run `/mta-validate`. The skill will walk the seven best-practice rules, flag what's missing (probably the caching layer and an exponential-backoff retry), and prompt you for structured feedback on what was confusing.
+The design work after that is straightforward. Walk the team and find the task that repeats daily and feels like "someone has to do this." Ask what you'd know if you had the time to think about it. Then build a plugin that automates the toil and captures the signal, with the four-piece shape: agent for the work, skill for the rules, MCP server for the data, slash commands for the entry points.
 
----
+## Measuring impact
 
-## The framework — build your own plugin
+Before building, do the maths. For the MTA plugin: fifteen minutes per integration question, twenty-five teams using the plugin twice a week. That's twelve and a half hours of platform engineer time reclaimed every week.
 
-The MTA plugin is one instance of a pattern. Here's how to spot the next one in your org.
-
-### The real skill isn't building — it's thinking
-
-Most engineers approach plugin building backwards. They start with "what can I build?" Start instead with "what toil am I watching people endure?"
-
-### Three questions
-
-**1. What repetitive task is stealing time from high-value work?**
-
-Look for the thing engineers do over and over that doesn't feel like "real work." For the MTA platform engineer: developers kept asking the same API integration questions. The platform engineer kept answering them. That's the toil.
-
-**2. What signal are you missing because of that toil?**
-
-When you're drowning answering questions, you can't see the pattern. For the MTA: no visibility into _where_ the API was actually confusing. That's the hidden feedback.
-
-**3. What would change if you solved it?**
-
-If developers could self-serve _and_ you got structured feedback on what was hard, what becomes possible? For the MTA: faster adoption, API improvements informed by real usage, the platform engineer's time back.
-
-### The MTA example, mapped to the framework
-
-| Step | MTA-specific answer |
-|---|---|
-| Toil | Platform engineer answering repetitive API questions |
-| Hidden signal | No data on what's actually confusing developers |
-| Solution | Plugin that guides developers + captures feedback |
-| Outcome | Self-service adoption + actionable API improvements + reclaimed time |
-
-### Apply this to your problem
-
-1. Walk your team. What task repeats daily that feels like "someone has to do this"?
-2. Ask: what would we _know_ if we had time to think about it?
-3. Design a plugin that automates the toil **and** surfaces the signal.
-4. Wire it to Claude Code with an agent (for the work), a skill (for the rules), an MCP server (for the data), and slash commands (for the entry points).
-
-That's the whole pattern.
-
----
-
-## Measuring impact: time saved
-
-Before you build, make a simple estimate. You'll need it to justify the investment and to know if it worked.
-
-For the MTA plugin:
-
-- **Average time to answer one API integration question:** 15 minutes
-- **Metric:** plugin usage — count of `/mta-validate` and agent-driven sessions per week
-- **Weekly time saved:** (15 min) × (interactions deflected to the plugin)
-- **Realistic scale:** 20 external teams + 5 internal teams, each using it ~2× weekly = 50 interactions × 15 min = **750 minutes (12.5 hours)** of platform engineer time reclaimed per week.
-
-Adapt to your toil: how many times per week does it happen? How long is one instance? If a plugin cuts that by 80%, what's the value? That's your business case.
-
----
-
-## What I scoped out (deliberately)
-
-To ship in a 90-minute build, two things are skeletons:
-
-1. **Feedback collection sink.** The skill and `/mta-feedback` slash command write structured JSON to `${CLAUDE_PLUGIN_ROOT}/feedback/`. In production, replace the file write with a POST to your internal feedback endpoint (Linear, an internal API, or a Claude Managed Agents queue). The JSON shape is already designed for that handoff.
-
-2. **Dreaming-based rule extraction.** The next step — see below — is to run a Claude Managed Agent over collected feedback to extract patterns and propose new validation rules automatically.
-
-These are skeletonized, not absent: you can see the wiring and extend it.
-
----
+Adapt to your case. How many times a week does the toil happen? How long is one instance? If a plugin cuts that by eighty percent, what's the value? That's your business case before any code gets written.
 
 ## With more time
 
-Wire feedback collection to **Claude Managed Agents with dreaming** so the validation agent improves over time. As real submissions accumulate, a dreaming-extracted pattern ("8 developers in two weeks confused `feed_id` with `feed_group_name`") becomes a new validation rule automatically. The MTA platform engineer reviews dreaming-extracted patterns monthly and either accepts them as new rules or addresses the root cause in the API docs.
+Two things are skeletons today and should be wired up properly in production.
 
-This is the loop: **plugin captures friction → dreaming extracts patterns → platform engineer fixes API or docs → plugin gets smarter**.
+The first is the feedback collection sink. The `/mta-feedback` command currently writes structured JSON to a local `feedback/` directory. In production this would be a POST to your internal feedback endpoint, whether that's Linear, an internal API, or a Claude Managed Agents queue. The JSON shape is already designed for that handoff.
 
----
+The second is dreaming-based rule extraction. As feedback piles up, a managed Agent extracts patterns on whatever cadence makes sense. Something like: eight developers in two weeks confused `feed_id` with `feed_group_name`. That becomes a new validation rule automatically. The platform engineer reviews patterns monthly and either accepts them as new rules or addresses the root cause in the documentation.
+
+Together this is the long arc. The plugin captures friction, dreaming extracts patterns, the platform engineer fixes the API or the docs, the plugin gets smarter.
 
 ## Distribution
 
-This repo is the artifact. Drop the install instructions into whatever channels your developers already use — internal docs portal, Slack, package manager, or just the GitHub link. The README is the on-ramp; the plugin itself just needs to work cleanly when they follow it.
-
----
+This repository is the artifact. Drop the install instructions into whatever channels your developers already use: internal documentation portal, Slack, package manager, or the GitHub link directly. The README is the on-ramp. The plugin itself just needs to work cleanly when developers follow it.
 
 ## Plugin structure
 
@@ -164,27 +96,27 @@ mta-plugin/
 │   ├── plugin.json              # manifest + MCP server config
 │   └── marketplace.json         # makes this repo installable as a marketplace
 ├── agents/
-│   └── mta-integration-guide.md # the integration-helping agent
+│   └── mta-integration-guide.md
 ├── skills/
 │   └── mta-validate/
-│       └── SKILL.md             # validation rules + feedback skeleton
+│       └── SKILL.md
 ├── commands/
-│   ├── mta-validate.md          # /mta-validate
-│   └── mta-feedback.md          # /mta-feedback
+│   ├── mta-validate.md
+│   └── mta-feedback.md
 ├── mcp-server/
 │   ├── package.json
 │   └── src/
 │       ├── index.js             # JSON-RPC over stdio, zero deps
-│       └── registry.js          # curated feed-group catalog + best practices
+│       └── registry.js          # curated feed catalogue + best practices
 └── README.md
 ```
 
----
-
 ## Sources this plugin pulls from live
 
-- **MTA's official GTFS docs repo:** [github.com/nymta/gtfs-documentation](https://github.com/nymta/gtfs-documentation) — discovered + fetched live via the GitHub API and raw content endpoint.
-- **NYCT GTFS-RT proto extensions:** [api.mta.info/nyct-subway.proto.txt](https://api.mta.info/nyct-subway.proto.txt) — the canonical schema for MTA-specific fields.
-- **GTFS spec:** [gtfs.org/documentation/realtime/reference](https://gtfs.org/documentation/realtime/reference/) — referenced when generating examples.
+The official MTA GTFS documentation repository at [github.com/nymta/gtfs-documentation](https://github.com/nymta/gtfs-documentation), discovered and fetched live via the GitHub API and raw content endpoint.
 
-The feed-group catalog (URLs, line coverage, auth notes) is curated because MTA does not publish it in any structured/scrapable form — the human-readable index is bot-blocked, and the feed endpoints themselves require registration. The curated layer is small, defensible, and tested against real probes.
+The canonical NYCT GTFS-realtime extensions specification at [api.mta.info/nyct-subway.proto.txt](https://api.mta.info/nyct-subway.proto.txt).
+
+The GTFS specification at [gtfs.org/documentation/realtime/reference](https://gtfs.org/documentation/realtime/reference/), referenced when generating examples.
+
+The feed-group catalogue (which subway lines map to which URL, plus auth and rate-limit notes) is curated. MTA does not publish this in any structured form: the documentation page checks request headers and turns away basic automated requests with a 403, and the catalogue has no canonical machine-readable version. The curated layer is small, defensible, and tested against real probes.
