@@ -27,7 +27,8 @@ Walk the rules in order. For each, decide:
 
 | Rule id | What to look for |
 |---|---|
-| `auth-header` | The request must send `x-api-key` as an HTTP **header**. Fail if it's passed as a query param (`?key=...`) — MTA's new endpoint does not accept that. Fail if no auth is sent at all. |
+| `use-get-not-head` | Look for any HTTP call to `api-endpoint.mta.info` using HEAD (often appears in healthchecks, cache probes, or `requests.head(...)`/`fetch(url, { method: 'HEAD' })`). Fail if HEAD is used against a feed URL — these endpoints 403 on HEAD even though GET on the same URL returns 200. Pass if all feed calls are GET. |
+| `url-encode-feed-path` | The feed URL must contain `%2F` (or its case variants) between the segments — e.g. `nyct%2Fgtfs-l`. Fail if the literal substring `/nyct/gtfs-` or `/lirr/gtfs-` or `/mnr/gtfs-` appears (naive concatenation or a `URL` round-trip will produce this and return 404). Pass if `%2F` is preserved. |
 | `respect-cadence` | Look for polling loops. Fail if interval < 15s. Warn if 15-30s. Pass if >= 30s or driven by an event/webhook. |
 | `backoff` | On error paths (catch blocks, retry logic), check for backoff with jitter. Warn if retries exist with fixed delay. Fail if retries are immediate or unbounded. Pass if no retries (acceptable). |
 | `timeouts` | The HTTP client must set a request timeout. Fail if missing (default fetch/requests/axios hangs forever). Pass if 5-10s. Warn if >30s or <2s. |

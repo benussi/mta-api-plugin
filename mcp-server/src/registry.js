@@ -12,7 +12,7 @@ const BASE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds";
 
 const DEFAULTS = {
   format: "GTFS-RT (protobuf)",
-  auth: "API key required as `x-api-key` header. Register at api.mta.info.",
+  auth: "Optional. Feeds return 200 keyless; register at api.mta.info for higher rate-limit headroom at scale.",
 };
 
 const RAW_FEED_GROUPS = {
@@ -80,10 +80,11 @@ const FEED_GROUPS = Object.fromEntries(
 
 const AUTH_OVERVIEW = {
   registration_url: "https://api.mta.info/",
-  how_to_register: [
-    "Visit https://api.mta.info/ and create an account.",
-    "Once registered, your API key is displayed in your account profile.",
-    "Pass the key on every request via the header: `x-api-key: <YOUR_KEY>`.",
+  required: false,
+  guidance: [
+    "GTFS-RT feeds currently work without an API key — verified May 2026: GET to any feed URL returns 200 with valid protobuf.",
+    "Register at api.mta.info if you plan to poll at scale (higher rate-limit headroom, you show up in MTA's developer metrics).",
+    "If you do use a key, pass it via the `x-api-key` header — not as a query parameter.",
   ],
   rate_limits: {
     documented: false,
@@ -98,9 +99,14 @@ const AUTH_OVERVIEW = {
 
 const BEST_PRACTICES = [
   {
-    id: "auth-header",
-    title: "Always send the API key as `x-api-key` header",
-    detail: "MTA does not accept the key as a query parameter on the new api-endpoint.mta.info host.",
+    id: "use-get-not-head",
+    title: "Use GET on feed endpoints; HEAD returns 403",
+    detail: "MTA's GTFS-RT endpoints reject HEAD requests with 403 even when GET on the same URL returns 200. Healthcheck or cache-probe code that uses HEAD will silently fail.",
+  },
+  {
+    id: "url-encode-feed-path",
+    title: "URL-encode the slash inside feed paths",
+    detail: "Feed paths use %2F as the separator between segments — `nyct%2Fgtfs-l` works, `nyct/gtfs-l` returns 404. Naive string concatenation and url.parse round-trips both break this.",
   },
   {
     id: "respect-cadence",

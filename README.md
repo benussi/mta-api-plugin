@@ -4,14 +4,14 @@ Built for the MTA platform engineer who is tired of answering the same API integ
 
 This plugin lets external and internal developers integrate the MTA real-time feeds inside Claude Code: ask a question in plain English, get correct working code grounded in MTA's live docs, validate it against MTA-specific best practices, and leave structured feedback that the platform team uses to prioritize docs and API improvements.
 
-> **Why MTA?** Most enterprise APIs already have official Claude Code plugins (Stripe, Twilio, Datadog, GitHub, Salesforce, Atlassian, …). MTA doesn't — the docs are Akamai bot-protected, the feeds 403 unauthenticated, and the canonical reference is a sparse GitHub repo. That's the hard case the framework needs to hold up under. If the pattern works here, it works for any enterprise API a customer brings you.
+> **Why MTA?** Most enterprise APIs already have official Claude Code plugins (Stripe, Twilio, Datadog, GitHub, Salesforce, Atlassian, …). MTA doesn't — the human-readable docs page bot-fingerprints (vanilla scrapers get 403 without browser-like headers), the feed-group catalog isn't published in any structured form, and the endpoints have probe-discovered gotchas (HEAD returns 403 even when GET works; the path needs `%2F` not `/`). That's the hard case the framework needs to hold up under. If the pattern works here, it works for any enterprise API a customer brings you.
 
 ---
 
 ## What this plugin includes
 
 - **Agent — `mta-integration-guide`** — answers integration questions ("how do I get real-time L train arrivals?"), maps lines to the correct feed group, generates working code, surfaces auth and rate-limit gotchas.
-- **Skill — `mta-validate`** — reviews integration code against the MTA best-practices checklist (auth header placement, polling cadence, backoff, timeouts, GTFS-RT parsing, caching, empty-feed handling). Returns pass/warn/fail per rule with suggested fixes.
+- **Skill — `mta-validate`** — reviews integration code against an MTA best-practices checklist grounded in real endpoint probes (HEAD-vs-GET gotcha, URL-encoded feed path, polling cadence, backoff, timeouts, GTFS-RT parsing, caching, empty-feed handling). Returns pass/warn/fail per rule with suggested fixes.
 - **MCP server — `mta-docs`** — live-fetches MTA's own [official GTFS documentation repo](https://github.com/nymta/gtfs-documentation) and the [canonical NYCT GTFS-RT proto](https://api.mta.info/nyct-subway.proto.txt). Plus a curated registry of feed-group URLs and auth notes (the parts MTA doesn't publish in a structured form).
 - **Slash commands** — `/mta-validate` (validate code) and `/mta-feedback` (standalone feedback).
 
