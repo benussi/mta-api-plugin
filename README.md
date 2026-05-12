@@ -1,10 +1,8 @@
 # mta-api Claude Code plugin
 
-MTA real-time feed integration for Claude Code. One integration agent, one validation skill, eight validation rules, two slash commands, and an MCP server that fetches official MTA documentation live.
+Integrate the MTA real-time feeds into your application from inside Claude Code. The plugin ships an integration agent that generates working code, a validation skill that checks code against eight MTA-specific rules, a structured feedback channel, and an MCP server that serves the live MTA documentation and a curated catalogue of feed URLs.
 
-For the MTA platform engineer running developer experience, and for consumer-side engineering teams integrating MTA feeds into their own product (airline post-landing guidance, hotel arrival flows, ride-share pickup routing, travel apps).
-
-For the meta-pattern (when to build a plugin like this for another API, how to size the impact, where the long arc goes), see [`GUIDE.md`](./GUIDE.md).
+Works for any application consuming the MTA real-time feeds: airline post-landing guidance, hotel arrival flows, ride-share pickup routing, real-estate transit-access displays, journey planners, transit dashboards.
 
 ## Install
 
@@ -28,7 +26,9 @@ Verify with `/plugin`. `mta-api` should show in the Installed tab and the Errors
 @mta-integration-guide how do I get real-time L train arrivals in Python?
 ```
 
-The agent calls the MCP server to look up the feed group, surfaces the relevant authentication notes (optional today, recommended at scale), and generates runnable Python using `gtfs-realtime-bindings` with a timeout, error handling, and TODO markers for caching and exponential-backoff retry.
+The agent looks up the L line's feed group via the MCP server, surfaces the relevant authentication notes, and generates runnable Python using `gtfs-realtime-bindings` with a timeout, error handling, and TODO markers for caching and exponential-backoff retry.
+
+The same shape works for any line, any rail system (LIRR, Metro-North), service alerts, and any of the language stacks Claude Code can produce.
 
 ### Validate code against the eight rules
 
@@ -36,15 +36,15 @@ The agent calls the MCP server to look up the feed group, surfaces the relevant 
 /mta-validate
 ```
 
-Paste the code to validate. Returns pass/warn/fail per rule with suggested fixes.
+Paste the code to validate. Returns pass/warn/fail per rule with suggested fixes. The rules are pulled live from the MCP server, so the agent and the validation step always agree.
 
-### Submit standalone feedback
+### Submit feedback
 
 ```
 /mta-feedback
 ```
 
-Three structured questions about the integration experience. Output is JSON written to `feedback/` (in production this becomes a POST to your internal feedback endpoint; see `GUIDE.md`).
+Three structured questions about the integration experience. Output is JSON written to `feedback/` for the MTA platform team.
 
 ## MCP tools
 
@@ -52,7 +52,7 @@ Server name: `mta-docs`. Exposed under namespace `mcp__plugin_mta-api_mta-docs__
 
 | Tool | Returns | Source |
 |---|---|---|
-| `discover_mta_docs` | File tree of `nymta/gtfs-documentation` | Live, GitHub API |
+| `discover_mta_docs` | File tree of the MTA GTFS documentation repository | Live, GitHub API |
 | `get_mta_doc` | Raw content of a doc by path | Live, GitHub raw |
 | `get_proto_spec` | NYCT GTFS-realtime proto extensions | Live, `api.mta.info` |
 | `list_feed_groups` | Feed-group catalogue (subway-ace, subway-l, lirr, mnr, alerts, …) | Curated |
@@ -60,7 +60,7 @@ Server name: `mta-docs`. Exposed under namespace `mcp__plugin_mta-api_mta-docs__
 | `get_auth_overview` | Auth state, rate-limit guidance, terms URL | Curated |
 | `get_best_practices` | The eight validation rules | Curated |
 
-The curated layer is curated because MTA does not publish the catalogue in any structured form (see `GUIDE.md` for the longer story). Responses are cached for five minutes.
+Live responses are cached for five minutes.
 
 ## Validation rules
 
@@ -74,8 +74,6 @@ The curated layer is curated because MTA does not publish the catalogue in any s
 | `gtfs-rt-parse` | Body parsed as GTFS-realtime protobuf, not JSON. |
 | `cache` | Caching layer with TTL matching the feed cadence. |
 | `handle-empty` | Code guards against empty `stop_time_update` and missing fields. |
-
-Pulled live by the validation skill via `get_best_practices`, so the agent and skill share one source of truth.
 
 ## Feed-group catalogue
 
@@ -105,7 +103,6 @@ mta-plugin/
 │   └── src/
 │       ├── index.js             # JSON-RPC over stdio, zero deps
 │       └── registry.js          # curated feed catalogue + best practices
-├── GUIDE.md
 └── README.md
 ```
 
