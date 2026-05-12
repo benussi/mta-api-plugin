@@ -4,7 +4,11 @@ Built for the MTA platform engineer who is tired of answering the same API integ
 
 This plugin lets external and internal developers integrate the MTA real-time feeds inside Claude Code: ask a question in plain English, get correct working code grounded in MTA's live docs, validate it against MTA-specific best practices, and leave structured feedback that the platform team uses to prioritize docs and API improvements.
 
-> **Why MTA?** Most enterprise APIs already have official Claude Code plugins (Stripe, Twilio, Datadog, GitHub, Salesforce, Atlassian, …). MTA doesn't — the human-readable docs page bot-fingerprints (vanilla scrapers get 403 without browser-like headers), the feed-group catalog isn't published in any structured form, and the endpoints have probe-discovered gotchas (HEAD returns 403 even when GET works; the path needs `%2F` not `/`). That's the hard case the framework needs to hold up under. If the pattern works here, it works for any enterprise API a customer brings you.
+> **Why MTA?** Two reasons.
+>
+> **One — MTA is the integration layer enterprise actually consumes.** The feeds are open, no API key, no partnership contract. Companies like United telling a landed passenger which train to catch from JFK, hotels surfacing arrival directions, ride-share platforms routing pickups near subway entrances, real-estate apps showing transit access — all real enterprise use cases that need an integration layer on top of MTA. This plugin is that layer.
+>
+> **Two — it's the deliberately harder case to demo the framework on.** Most other enterprise APIs already have official Claude Code plugins (Stripe, Twilio, Datadog, GitHub, Salesforce, Atlassian, …). MTA doesn't. The human-readable docs page bot-fingerprints anything without browser-like headers (Claude WebFetch and vanilla scrapers get a 403), the feed-group catalog isn't published in any structured form, and the endpoints have probe-discovered gotchas (HEAD returns 403 even when GET works; the path needs `%2F` not `/`). If the pattern works here, it works for any enterprise API a customer brings you.
 
 ---
 
