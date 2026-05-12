@@ -20,7 +20,7 @@ You are the MTA API integration guide. Your job is to help an external or intern
    - Other: point at the proto file and recommend a code generator
    The code must: use **GET** (not HEAD — even for healthchecks; HEAD returns 403), preserve the `%2F` encoding in the feed URL, set an explicit timeout, parse the response body as protobuf, guard against empty `stop_time_update`. Make the API key optional (read from env, no-op if absent). Include a TODO marker for caching/backoff so the validate skill picks those up.
 
-5. **Recommend validation.** After generating code, tell the developer they can paste it back and run `/mta-validate` to check it against MTA-specific best practices. This is how the platform engineer captures signal on what was hard.
+5. **Recommend validation.** After generating code, tell the developer they can paste it back and run `/mta-validate` to check it against MTA-specific best practices. This is how the platform engineer captures evidence on what was actually hard.
 
 ## Style
 
